@@ -87,7 +87,7 @@ begin
 end;
 
 
-function TPedidoDAO.getAll: TList<TPedido>;
+function TPedidoDAO.getAll(): TList<TPedido>;
 var qry: TFDQuery;
     connection: TFDConnection;
     pedido: TPedido;
@@ -102,17 +102,21 @@ begin
       qry.Connection := connection;
       qry.SQL.Text := 'SELECT * FROM pedido_dados_gerais';
       qry.Open;
+      qry.First;
 
        if not qry.IsEmpty then
         begin
-          pedido := TPedido.Create;
-          for i := 0 to qry.RecordCount do
+          while not qry.Eof do
             begin
+              pedido := TPedido.Create;
+
               pedido.numeroPedido := qry.FieldByName('numeroPedido').AsInteger;
               pedido.dataEmissao := qry.FieldByName('dataEmissao').AsDateTime;
               pedido.codigoCliente := qry.FieldByName('codigoCliente').AsInteger;
               pedido.valorTotal := qry.FieldByName('valorTotal').AsCurrency;
+
               pedidos.Add(pedido);
+              qry.Next;
             end;
         end
       else
@@ -160,8 +164,8 @@ begin
     connection.StartTransaction;
     try
       qry.Connection := connection;
-      qry.SQL.Text := 'UPDATE pedido_dados_gerais SET dataEmissao = '+ Datetostr(dataEmissao)+ ', codigoCliente =' +IntToStr(codigoCliente)+ ', valorTotal = ' +CurrToStr(valorTotal) +'  WHERE numeroPedido = ' + IntToStr(numeroPedido);
-      qry.Open;
+      qry.SQL.Text := 'UPDATE pedido_dados_gerais SET dataEmissao = '+ QuotedStr(FormatDateTime('yyyy-mm-dd', dataEmissao)) + ', codigoCliente =' +IntToStr(codigoCliente)+ ', valorTotal = ' + StringReplace(CurrToStr(valorTotal), ',', '.', []) +'  WHERE numeroPedido = ' + IntToStr(numeroPedido);
+      qry.Execute;
       connection.Commit;
     except
       connection.Rollback;
@@ -184,7 +188,7 @@ begin
     try
       qry.Connection := connection;
       qry.SQL.Text := 'DELETE FROM pedido_dados_gerais WHERE numeroPedido = ' + IntToStr(numeroPedido);
-      qry.Open;
+      qry.Execute;
       connection.Commit;
     except
       connection.Rollback;

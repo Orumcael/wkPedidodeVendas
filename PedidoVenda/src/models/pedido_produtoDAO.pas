@@ -43,6 +43,8 @@ begin
     qry.Connection := connection;
     qry.SQL.Text := 'SELECT * FROM pedido_produto WHERE codigo = ' + IntToStr(codigo);
     qry.Open;
+    qry.First;
+
     if not qry.IsEmpty then
       begin
         pproduto.codigo := qry.FieldByName('codigo').AsInteger;
@@ -54,6 +56,7 @@ begin
       end
     else
       Writeln('Pedido_Produto não encontrado.');
+
     Result := pproduto;
   finally
     qry.Free;
@@ -115,6 +118,8 @@ begin
     qry.Connection := connection;
     qry.SQL.Text := 'SELECT * FROM pedido_produto WHERE codigo = (SELECT MAX(codigo) FROM pedido_produto)';
     qry.Open;
+    qry.First;
+
     if not qry.IsEmpty then
       begin
         pproduto.codigo := qry.FieldByName('codigo').AsInteger;
@@ -126,6 +131,7 @@ begin
       end
     else
       Writeln('Pedido de produto não encontrado.');
+
     Result := pproduto;
   finally
     qry.Free;
@@ -148,10 +154,12 @@ begin
       qry.Connection := connection;
       qry.SQL.Text := 'SELECT * FROM pedido_produto';
       qry.Open;
+      qry.First;
 
        if not qry.IsEmpty then
         begin
           pproduto := TPedidoProduto.Create;
+
           for i := 0 to qry.RecordCount do
             begin
               pproduto.codigo := qry.FieldByName('codigo').AsInteger;
@@ -207,8 +215,8 @@ begin
     connection.StartTransaction;
     try
       qry.Connection := connection;
-      qry.SQL.Text := 'UPDATE pedido_produto SET numeroPedido = '+InttoStr(numeroPedido)+', codigoProduto = '+InttoStr(codigoProduto)+', quantidade = '+InttoStr(quantidade)+', valorUnitario = '+ CurrtoStr(valorUnitario)+', valorTotal = '+ CurrtoStr(valorTotal)+'  WHERE codigo = ' + IntToStr(codigo);
-      qry.Open;
+      qry.SQL.Text := 'UPDATE pedido_produto SET numeroPedido = '+InttoStr(numeroPedido)+', codigoProduto = '+InttoStr(codigoProduto)+', quantidade = '+InttoStr(quantidade)+', valorUnitario = '+ StringReplace(CurrtoStr(valorUnitario), ',', '.', []) +', valorTotal = '+ StringReplace(CurrtoStr(valorTotal), ',', '.', []) +'  WHERE codigo = ' + IntToStr(codigo);
+      qry.Execute;
       connection.Commit;
     except
       connection.Rollback;
@@ -231,7 +239,7 @@ begin
     try
       qry.Connection := connection;
       qry.SQL.Text := 'DELETE FROM pedido_produto WHERE codigo = ' + IntToStr(codigo);
-      qry.Open;
+      qry.Execute;
       connection.Commit;
     except
       connection.Rollback;

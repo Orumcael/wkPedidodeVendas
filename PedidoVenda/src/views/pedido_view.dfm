@@ -2,8 +2,8 @@ object PedidoView: TPedidoView
   Left = 0
   Top = 0
   Caption = 'Pedido de Venda'
-  ClientHeight = 509
-  ClientWidth = 1138
+  ClientHeight = 508
+  ClientWidth = 1134
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,7 +17,8 @@ object PedidoView: TPedidoView
     Left = 0
     Top = 0
     Width = 773
-    Height = 509
+    Height = 508
+    TabStop = False
     Align = alLeft
     BevelInner = bvNone
     DefaultColWidth = 153
@@ -27,18 +28,19 @@ object PedidoView: TPedidoView
     Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowSelect, goFixedRowDefAlign]
     TabOrder = 0
     OnKeyDown = grdProdutosKeyDown
-    ExplicitHeight = 508
+    OnSelectCell = grdProdutosSelectCell
+    ExplicitHeight = 507
   end
   object pnlLeft: TPanel
     Left = 773
     Top = 0
-    Width = 365
-    Height = 509
+    Width = 361
+    Height = 508
     Align = alClient
     BorderStyle = bsSingle
     TabOrder = 1
-    ExplicitWidth = 361
-    ExplicitHeight = 508
+    ExplicitWidth = 357
+    ExplicitHeight = 507
     object lblTotal: TLabel
       Left = 14
       Top = 371
@@ -52,17 +54,29 @@ object PedidoView: TPedidoView
       Font.Style = [fsBold]
       ParentFont = False
     end
+    object RadioGroup2: TRadioGroup
+      Left = 4
+      Top = 11
+      Width = 349
+      Height = 150
+      Caption = 'Dados do Cliente '
+      Color = clBtnFace
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 12
+    end
     object edtCodProduto: TLabeledEdit
       Left = 14
       Top = 213
       Width = 45
       Height = 23
+      TabStop = False
       Color = clScrollBar
       EditLabel.Width = 42
       EditLabel.Height = 15
       EditLabel.Caption = 'C'#243'digo:'
       ReadOnly = True
-      TabOrder = 0
+      TabOrder = 4
       Text = ''
     end
     object btnCodProduto: TButton
@@ -71,7 +85,7 @@ object PedidoView: TPedidoView
       Width = 30
       Height = 25
       Caption = '...'
-      TabOrder = 1
+      TabOrder = 5
       OnClick = btnCodProdutoClick
     end
     object edtProduto: TLabeledEdit
@@ -79,12 +93,13 @@ object PedidoView: TPedidoView
       Top = 213
       Width = 235
       Height = 23
+      TabStop = False
       Color = clScrollBar
       EditLabel.Width = 46
       EditLabel.Height = 15
       EditLabel.Caption = 'Produto:'
       ReadOnly = True
-      TabOrder = 2
+      TabOrder = 6
       Text = ''
     end
     object btnInserirProduto: TButton
@@ -93,7 +108,7 @@ object PedidoView: TPedidoView
       Width = 115
       Height = 25
       Caption = 'Inserir/Confirmar'
-      TabOrder = 3
+      TabOrder = 9
       OnClick = btnInserirProdutoClick
     end
     object edtQtd: TLabeledEdit
@@ -105,7 +120,7 @@ object PedidoView: TPedidoView
       EditLabel.Height = 15
       EditLabel.Caption = 'Quantidade:'
       NumbersOnly = True
-      TabOrder = 4
+      TabOrder = 7
       Text = ''
     end
     object edtVlUnitario: TLabeledEdit
@@ -117,37 +132,26 @@ object PedidoView: TPedidoView
       EditLabel.Height = 15
       EditLabel.Caption = 'Valor Unit'#225'rio:'
       NumbersOnly = True
-      TabOrder = 5
+      TabOrder = 8
       Text = ''
     end
     object btnGravarPedido: TButton
       Left = 14
-      Top = 452
+      Top = 424
       Width = 150
       Height = 25
       Caption = 'Gravar Pedido'
-      TabOrder = 6
+      TabOrder = 10
       OnClick = btnGravarPedidoClick
     end
     object btnCarregarPedido: TButton
-      Left = 194
-      Top = 452
-      Width = 150
+      Left = 16
+      Top = 132
+      Width = 153
       Height = 25
       Caption = 'Carregar Pedido'
-      TabOrder = 7
+      TabOrder = 2
       OnClick = btnCarregarPedidoClick
-    end
-    object RadioGroup2: TRadioGroup
-      Left = 4
-      Top = 11
-      Width = 349
-      Height = 150
-      Caption = 'Dados do Cliente '
-      Color = clBtnFace
-      ParentBackground = False
-      ParentColor = False
-      TabOrder = 8
     end
     object edtCodCliente: TLabeledEdit
       Left = 14
@@ -155,15 +159,16 @@ object PedidoView: TPedidoView
       Width = 45
       Height = 23
       TabStop = False
-      Color = clScrollBar
       EditLabel.Width = 42
       EditLabel.Height = 15
       EditLabel.Caption = 'C'#243'digo:'
       EditLabel.Color = clScrollBar
       EditLabel.ParentColor = False
-      ReadOnly = True
-      TabOrder = 9
+      NumbersOnly = True
+      TabOrder = 13
       Text = ''
+      OnChange = edtCodClienteChange
+      OnKeyDown = edtCodClienteKeyDown
     end
     object btnCodCliente: TButton
       Left = 65
@@ -171,7 +176,7 @@ object PedidoView: TPedidoView
       Width = 30
       Height = 25
       Caption = '...'
-      TabOrder = 10
+      TabOrder = 1
       OnClick = btnCodClienteClick
     end
     object edtCliente: TLabeledEdit
@@ -179,13 +184,32 @@ object PedidoView: TPedidoView
       Top = 103
       Width = 331
       Height = 23
+      TabStop = False
       Color = clScrollBar
       EditLabel.Width = 40
       EditLabel.Height = 15
       EditLabel.Caption = 'Cliente:'
       ReadOnly = True
-      TabOrder = 11
+      TabOrder = 0
       Text = ''
+    end
+    object btnLimpar: TBitBtn
+      Left = 198
+      Top = 424
+      Width = 150
+      Height = 25
+      Caption = 'Limpa Campos'
+      TabOrder = 11
+      OnClick = btnLimparClick
+    end
+    object btnCancelarPedido: TButton
+      Left = 192
+      Top = 132
+      Width = 153
+      Height = 25
+      Caption = 'Cancelar Pedido'
+      TabOrder = 3
+      OnClick = btnCancelarPedidoClick
     end
   end
 end

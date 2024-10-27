@@ -9,7 +9,8 @@ uses
   FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
   FireDAC.Phys.Intf, FireDAC.Stan.Pool, FireDAC.Stan.Async, FireDAC.Phys,
   FireDAC.VCLUI.Wait, Data.DB, Vcl.Mask, busca_view, produto_controller, cliente,
-  cliente_controller, pedido_produto_controller, pedido_produto, System.Generics.Collections;
+  cliente_controller, pedido_produto_controller, pedido_produto, System.Generics.Collections,
+  Vcl.Buttons;
 
 type
   TPedidoView = class(TForm)
@@ -28,6 +29,8 @@ type
     btnCodCliente: TButton;
     edtCliente: TLabeledEdit;
     lblTotal: TLabel;
+    btnLimpar: TBitBtn;
+    btnCancelarPedido: TButton;
     procedure btnInserirProdutoClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure grdProdutosKeyDown(Sender: TObject; var Key: Word;
@@ -36,13 +39,16 @@ type
     procedure btnCodClienteClick(Sender: TObject);
     procedure btnGravarPedidoClick(Sender: TObject);
     procedure btnCarregarPedidoClick(Sender: TObject);
-    //procedure btnGravarPedidoClick(Sender: TObject);
-    //procedure grdProdutosKeyDown(Sender: TObject; var Key: Word;
-    //  Shift: TShiftState);
-    //procedure edtCodigoClienteChange(Sender: TObject);
-    //procedure btnCarregarPedidoClick(Sender: TObject);
+    procedure btnLimparClick(Sender: TObject);
+    procedure grdProdutosSelectCell(Sender: TObject; ACol, ARow: Integer;
+      var CanSelect: Boolean);
+    procedure edtCodClienteChange(Sender: TObject);
+    procedure edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure btnCancelarPedidoClick(Sender: TObject);
   private
     { Private declarations }
+    codigoPedido: Integer;
     editarItem: Integer;
     produtoController: TProdutoController;
     clienteController: TClienteController;
@@ -50,8 +56,10 @@ type
     ppController: TPedidoProdutoController;
     procedure MoveToNextCell();
     procedure MoveToPreviousCell();
-    //procedure AtualizarGrid;
-    procedure CalcularTotalPedido;
+    procedure limpaDadosGrid();
+    procedure limpaDadosCliente();
+    procedure limpaDadosProduto();
+    procedure CalcularTotalPedido();
     procedure RemoverLinhaGrid(Index: Integer);
   public
     { Public declarations }
@@ -71,6 +79,7 @@ begin
   pedidoController := TPedidoController.Create;
   ppController := TPedidoProdutoController.Create;
 
+  codigoPedido := 0;
   editarItem := 0;
 
   grdProdutos.RowCount:= 1;
@@ -93,6 +102,36 @@ begin
     Total := Total + StrToCurr(grdProdutos.Cells[4, i]);
 
   lblTotal.Caption := 'Total do Pedido: R$' + CurrToStr(Total);
+end;
+
+procedure TPedidoView.edtCodClienteChange(Sender: TObject);
+begin
+  if Trim(edtCodCliente.Text) <> '' then
+    begin
+      btnCarregarPedido.Enabled := False;
+      btnCancelarPedido.Enabled := False;
+    end
+  else
+    begin
+      btnCarregarPedido.Enabled := True;
+      btnCancelarPedido.Enabled := True;
+    end;
+end;
+
+procedure TPedidoView.edtCodClienteKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var cliente: TCliente;
+begin
+  if Key = VK_RETURN then
+    begin
+      if Trim(edtCodCliente.Text) <> '' then
+        begin
+          cliente := clienteController.findCliente(StrToInt(Trim(edtCodCliente.Text)));
+
+          edtCodCliente.Text := IntToStr(cliente.codigo);
+          edtCliente.Text := cliente.nome;
+        end;
+    end;
 end;
 
 procedure TPedidoView.RemoverLinhaGrid(Index: Integer);
@@ -124,16 +163,17 @@ procedure TPedidoView.grdProdutosKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
 	case Key of
-		//VK_UP:	MoveToPreviousCell();
-	  //VK_DOWN: MoveToNextCell();
+
     VK_RETURN:
 			begin
+        btnCodProduto.Enabled := False;
         editarItem := grdProdutos.Row;
 
 				edtCodProduto.Text := grdProdutos.Cells[0, grdProdutos.Row];
 				edtProduto.Text := grdProdutos.Cells[1, grdProdutos.Row];
 				edtQtd.Text := grdProdutos.Cells[2, grdProdutos.Row];
 				edtVlUnitario.Text := grdProdutos.Cells[3, grdProdutos.Row];
+        edtQtd.SetFocus;
 			end;
 		VK_DELETE:
 			begin
@@ -147,223 +187,253 @@ begin
           end;
 			end;
 	end;
+
+end;
+
+procedure TPedidoView.grdProdutosSelectCell(Sender: TObject; ACol,
+  ARow: Integer; var CanSelect: Boolean);
+begin
+if ARow = 0 then
+    CanSelect := False
+  else
+    CanSelect := True;
+end;
+
+procedure TPedidoView.limpaDadosGrid();
+var i: Integer;
+begin
+  grdProdutos.RowCount := 1;
+end;
+
+procedure TPedidoView.limpaDadosCliente;
+begin
+  edtCodCliente.Clear;
+  edtCliente.Clear;
+end;
+
+procedure TPedidoView.limpaDadosProduto;
+begin
+  edtCodProduto.Clear;
+  edtProduto.Clear;
+  edtQtd.Clear;
+  edtVlUnitario.Clear;
+end;
+
+procedure TPedidoView.btnCancelarPedidoClick(Sender: TObject);
+begin
+  frmBusca := TfrmBusca.Create(Self);
+  frmBusca.operacao := TOperacao.Pedido;
+  frmBusca.excluirPedido := True;
+  frmBusca.ShowModal;
+  frmBusca.Free;
+  edtCodCliente.SetFocus;
 end;
 
 procedure TPedidoView.btnCarregarPedidoClick(Sender: TObject);
 var pedido: TPedido;
     produto: TProduto;
+    cliente: TCliente;
     pedidoProdutos: TList<TPedidoProduto>;
     i: Integer;
 begin
   frmBusca := TfrmBusca.Create(Self);
+  frmBusca.excluirPedido := False;
   frmBusca.operacao := TOperacao.Pedido;
   frmBusca.ShowModal;
-  pedido := pedidoController.findPedido(frmBusca.codigoConsulta);
-  frmBusca.Free;
 
-  pedidoProdutos := ppController.findPedidoProdutoNumeroPedido(pedido.numeroPedido);
-
-  for i := 1 to (grdProdutos.RowCount - 1) do
+  if frmBusca.codigoConsulta <> 0 then
     begin
-      produto := produtoController.findProduto(pedidoProdutos.Items[i].codigoProduto);
+      pedido := pedidoController.findPedido(frmBusca.codigoConsulta);
+      codigoPedido := pedido.numeroPedido;
 
-      grdProdutos.Cells[0, i] := IntToStr(produto.codigo);
-      grdProdutos.Cells[1, i] := produto.descricao;
-      grdProdutos.Cells[2, i] := IntToStr(pedidoProdutos.Items[i].Quantidade);
-      grdProdutos.Cells[3, i] := CurrToStr(pedidoProdutos.Items[i].ValorUnitario);
-      grdProdutos.Cells[4, i] := CurrToStr(pedidoProdutos.Items[i].ValorTotal);
+      pedidoProdutos := ppController.findPedidoProdutoNumeroPedido(pedido.numeroPedido);
+      cliente := clienteController.findCliente(pedido.codigoCliente);
+
+      // Carrega o cliente
+      edtCodCliente.Text := IntToStr(cliente.codigo);
+      edtCliente.Text := cliente.nome;
+
+      limpaDadosGrid();
+      grdProdutos.RowCount := (pedidoProdutos.Count + 1);
+
+      // Carrega os produtos
+      for i := 0 to (pedidoProdutos.Count - 1) do
+        begin
+          produto := produtoController.findProduto(pedidoProdutos.Items[i].codigoProduto);
+
+          grdProdutos.Cells[0, (i+1)] := IntToStr(produto.codigo);
+          grdProdutos.Cells[1, (i+1)] := produto.descricao;
+          grdProdutos.Cells[2, (i+1)] := IntToStr(pedidoProdutos.Items[i].Quantidade);
+          grdProdutos.Cells[3, (i+1)] := CurrToStr(pedidoProdutos.Items[i].ValorUnitario);
+          grdProdutos.Cells[4, (i+1)] := CurrToStr(pedidoProdutos.Items[i].ValorTotal);
+        end;
+
+      CalcularTotalPedido();
     end;
+
+  frmBusca.Free;
+  grdProdutos.Row := 1;
+  grdProdutos.setfocus;
 end;
 
 procedure TPedidoView.btnCodClienteClick(Sender: TObject);
 var cliente: TCliente;
 begin
   frmBusca := TfrmBusca.Create(Self);
+  frmBusca.excluirPedido := False;
   frmBusca.operacao := TOperacao.Cliente;
   frmBusca.ShowModal;
-  cliente := clienteController.findCliente(frmBusca.codigoConsulta);
-  frmBusca.free;
 
-  edtCodCliente.Text := IntToStr(cliente.codigo);
-  edtCliente.Text := cliente.nome;
+  if frmBusca.codigoConsulta <> 0 then
+    begin
+      cliente := clienteController.findCliente(frmBusca.codigoConsulta);
+
+      edtCodCliente.Text := IntToStr(cliente.codigo);
+      edtCliente.Text := cliente.nome;
+    end
+  else
+    begin
+      edtCodCliente.Clear;
+      edtCliente.Clear;
+    end;
+
+  frmBusca.free;
 end;
 
 procedure TPedidoView.btnCodProdutoClick(Sender: TObject);
 var produto: TProduto;
 begin
   frmBusca := TfrmBusca.Create(Self);
+  frmBusca.excluirPedido := False;
   frmBusca.operacao := TOperacao.Produto;
   frmBusca.ShowModal;
-  produto := produtoController.findProduto(frmBusca.codigoConsulta);
-  frmBusca.free;
 
-  edtCodProduto.Text := IntToStr(produto.codigo);
-  edtProduto.Text := produto.descricao;
-  edtVlUnitario.Text := CurrToStr(produto.precoVenda);
+  if frmBusca.codigoConsulta <> 0 then
+    begin
+      produto := produtoController.findProduto(frmBusca.codigoConsulta);
+
+      edtCodProduto.Text := IntToStr(produto.codigo);
+      edtProduto.Text := produto.descricao;
+      edtVlUnitario.Text := CurrToStr(produto.precoVenda);
+    end
+  else
+    begin
+      edtCodProduto.Clear;
+      edtProduto.Clear;
+      edtVlUnitario.Clear;
+    end;
+
+  frmBusca.free;
+  edtQtd.Text := '';
+  edtQtd.SetFocus;
+
 end;
 
 procedure TPedidoView.btnGravarPedidoClick(Sender: TObject);
 var pedido: TPedido;
+    lPedidoProduto: TList<TPedidoProduto>;
     i: Integer;
-    total, vlunitario: String;
+    total: String;
 begin
-  // Grava o pedido
-  total := StringReplace(lblTotal.Caption, 'Total do Pedido: R$', '', []);
-  pedido := pedidoController.addPedido(Now, StrToInt(edtCodCliente.Text), StrToCurr(total));
+  if grdProdutos.RowCount = 1 then
+  begin
+    ShowMessage('Não há produtos para gravar o pedido!');
+    Exit;
+  end;
 
-  // Grava o produto_pedido
-  for i := 1 to (grdProdutos.RowCount - 1) do
-    begin
-      ppController.addPedidoProduto(pedido.numeroPedido, StrToInt(grdProdutos.Cells[0, i]), StrToInt(grdProdutos.Cells[2, i]), StrToCurr(grdProdutos.Cells[3, i]), StrToCurr(grdProdutos.Cells[4, i]));
-    end;
+  if edtCodCliente.Text <> '' then
+  begin
+    if codigoPedido <> 0 then
+      begin
+        // Edita o pedido e produto_pedido
+        total := StringReplace(lblTotal.Caption, 'Total do Pedido: R$', '', []);
+        pedido := pedidoController.findPedido(codigoPedido);
+        pedido := pedidoController.editPedido(pedido.numeroPedido, Now, pedido.codigoCliente, StrToCurr(total));
 
-  ShowMessage('Pedido gravado com sucesso!');
+        lPedidoProduto := ppController.findPedidoProdutoNumeroPedido(codigoPedido);
+
+        for i := 0 to (lPedidoProduto.Count - 1) do
+          begin
+            ppController.editPedidoProduto(lPedidoProduto.Items[i].codigo, codigoPedido, lPedidoProduto.Items[i].codigoProduto, StrToInt(grdProdutos.Cells[2, (i+1)]), StrToCurr(grdProdutos.Cells[3, (i+1)]), StrToCurr(grdProdutos.Cells[4, (i+1)]));
+          end;
+
+        codigoPedido := 0;
+      end
+    else
+      begin
+        // Grava o pedido e produto_pedido
+        total := StringReplace(lblTotal.Caption, 'Total do Pedido: R$', '', []);
+        pedido := pedidoController.addPedido(Now, StrToInt(edtCodCliente.Text), StrToCurr(total));
+
+        for i := 1 to (grdProdutos.RowCount - 1) do
+          begin
+            ppController.addPedidoProduto(pedido.numeroPedido, StrToInt(grdProdutos.Cells[0, i]), StrToInt(grdProdutos.Cells[2, i]), StrToCurr(grdProdutos.Cells[3, i]), StrToCurr(grdProdutos.Cells[4, i]));
+          end;
+      end;
+
+
+    ShowMessage('Pedido gravado com sucesso!');
+
+    if MessageDlg('Deseja iniciar um novo pedido?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+      begin
+        btnLimpar.Click();
+        CalcularTotalPedido();
+        edtCodCliente.SetFocus;
+      end;
+  end
+  else
+  begin
+    ShowMessage('Os campos não foram preenchidos corretamente!');
+  end;
 end;
 
 procedure TPedidoView.btnInserirProdutoClick(Sender: TObject);
 var pos: Integer;
 begin
-  if editarItem <> 0 then
-    begin
-      // Editando um produto
-      pos := editarItem;
-      editarItem := 0;
-    end
-  else
-    begin
-      // Adicionando novo produto
-      grdProdutos.RowCount := grdProdutos.RowCount + 1;
-      pos := (grdProdutos.RowCount-1);
-    end;
-
-    grdProdutos.Cells[0, pos] := edtCodProduto.Text;
-    grdProdutos.Cells[1, pos] := edtProduto.Text;
-    grdProdutos.Cells[2, pos] := edtQtd.Text;
-    grdProdutos.Cells[3, pos] := edtVlUnitario.Text;
-    grdProdutos.Cells[4, pos] := CurrToStr(StrToCurr(edtQtd.Text) *  StrToCurr(edtVlUnitario.Text));
-
-    CalcularTotalPedido();
-
-
-
-  {
+  if ((edtQtd.Text <> '') and (edtVlUnitario.Text <> '')) then
   begin
-  // Se o grid estiver sendo editado, atualize a linha atual com os novos valores
-  if grdProdutos.Row > 0 then
-    begin
-      SelectedRow := grdProdutos.Row;
-      grdProdutos.Cells[2, SelectedRow] := edtQuantidade.Text;
-      grdProdutos.Cells[3, SelectedRow] := edtValorUnitario.Text;
-      grdProdutos.Cells[4, SelectedRow] := CurrToStr(StrToInt(edtQuantidade.Text) * StrToCurr(edtValorUnitario.Text));
-    end
-  else
-    begin
-      // Adicionar novo produto
-      CalcularTotalPedido;
-
-    Produto := TProduto.Create;
-    Produto.Codigo := StrToInt(edtCodigoProduto.Text);
-    Produto.Descricao := 'Produto ' + IntToStr(Produto.Codigo); // Simular busca do produto
-    Produto.PrecoVenda := StrToCurr(edtValorUnitario.Text);
-
-    Item := TPedidoItem.Create;
-    Item.codigoProduto := Produto;
-    Item.Quantidade := StrToInt(edtQuantidade.Text);
-    Item.ValorUnitario := Produto.PrecoVenda;
-    Item.ValorTotal := Item.Quantidade * Item.ValorUnitario;
-
-    FPedido.Itens.Add(Item);
-    AtualizarGrid;
-    CalcularTotalPedido;
-    end;
-  end;}
-end;
-
-{
-procedure TPedidoView.btnCarregarPedidoClick(Sender: TObject);
-var
-  NumeroPedido: Integer;
-  Qry: TFDQuery;
-begin
-  if InputQuery('Carregar Pedido', 'Informe o número do pedido:', NumeroPedido) then
-  begin
-    Qry := TFDQuery.Create(nil);
-    try
-      Qry.Connection := FController.FDBConnection.GetConnection;
-      Qry.SQL.Text := 'SELECT * FROM pedidos WHERE Numero = :Numero';
-      Qry.Params.ParamByName('Numero').AsInteger := NumeroPedido;
-      Qry.Open;
-      if not Qry.IsEmpty then
+    if editarItem <> 0 then
       begin
-        // Carregar os dados do cliente e produtos aqui...
+        // Editando um produto
+        pos := editarItem;
+        editarItem := 0;
       end
-      else
-        ShowMessage('Pedido não encontrado.');
-    finally
-      Qry.Free;
-    end;
-  end;
-end;
-
-}
-
-
-{
-
-
-procedure TPedidoView.edtCodigoClienteChange(Sender: TObject);
-begin
-  btnCarregarPedido.Visible := edtCodigoCliente.Text = '';
-end;
-
-procedure TPedidoView.AtualizarGrid;
-var
-  I: Integer;
-begin
-  grdProdutos.RowCount := FPedido.Itens.Count + 1;
-  for I := 0 to FPedido.Itens.Count - 1 do
-  begin
-    grdProdutos.Cells[0, I + 1] := IntToStr(FPedido.Itens[I].codigoProduto.Codigo);
-    grdProdutos.Cells[1, I + 1] := FPedido.Itens[I].codigoProduto.Descricao;
-    grdProdutos.Cells[2, I + 1] := IntToStr(FPedido.Itens[I].Quantidade);
-    grdProdutos.Cells[3, I + 1] := CurrToStr(FPedido.Itens[I].ValorUnitario);
-    grdProdutos.Cells[4, I + 1] := CurrToStr(FPedido.Itens[I].ValorTotal);
-  end;
-end;
-
-procedure TPedidoView.grdProdutosKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
-  var
-  SelectedRow: Integer;
-begin
-  if Key = VK_UP then
-    grdProdutos.Row := grdProdutos.Row - 1
-  else if Key = VK_DOWN then
-    grdProdutos.Row := grdProdutos.Row + 1
-  else if Key = VK_RETURN then
-  begin
-    begin
-      SelectedRow := grdProdutos.Row;
-      // Carregar os dados do produto selecionado para edição
-      edtCodigoProduto.Text := grdProdutos.Cells[0, SelectedRow];
-      edtQuantidade.Text := grdProdutos.Cells[2, SelectedRow];
-      edtValorUnitario.Text := grdProdutos.Cells[3, SelectedRow];
-    end;
-  end
-  else if Key = VK_DELETE then
-  begin
-    SelectedRow := grdProdutos.Row;
-    if SelectedRow > 0 then
-    begin
-      if MessageDlg('Deseja realmente apagar o produto?', mtConfirmation, [mbYes, mbNo], 0) = mrYes then
+    else
       begin
-        RemoverLinhaGrid(SelectedRow); // Chama o método para remover a linha
-        CalcularTotalPedido;
+        // Adicionando novo produto
+        grdProdutos.RowCount := grdProdutos.RowCount + 1;
+        pos := (grdProdutos.RowCount-1);
       end;
-    end;
+
+      grdProdutos.Cells[0, pos] := edtCodProduto.Text;
+      grdProdutos.Cells[1, pos] := edtProduto.Text;
+      grdProdutos.Cells[2, pos] := edtQtd.Text;
+      grdProdutos.Cells[3, pos] := edtVlUnitario.Text;
+      grdProdutos.Cells[4, pos] := CurrToStr(StrToCurr(edtQtd.Text) *  StrToCurr(edtVlUnitario.Text));
+
+      CalcularTotalPedido();
+      limpaDadosProduto();
+
+      if btnCodProduto.Enabled = False then
+      begin
+       btnCodProduto.Enabled := True;
+      end;
+  end
+  else
+  begin
+    ShowMessage('Os campos não foram preenchidos corretamente!');
+    edtQtd.SetFocus;
   end;
+
 end;
 
-   }
+procedure TPedidoView.btnLimparClick(Sender: TObject);
+begin
+  limpaDadosGrid();
+  limpaDadosCliente();
+  limpaDadosProduto();
+  CalcularTotalPedido();
+  edtCodCliente.SetFocus;
+end;
 
 end.

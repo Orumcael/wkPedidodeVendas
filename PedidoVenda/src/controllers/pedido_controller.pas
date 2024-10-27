@@ -26,7 +26,7 @@ begin
   pedidoDAO := TPedidoDAO.Create;
 end;
 
-function TPedidoController.findAllPedido: TList<TPedido>;
+function TPedidoController.findAllPedido(): TList<TPedido>;
 var Pedidos: TList<TPedido>;
 begin
   Pedidos := PedidoDAO.getAll();

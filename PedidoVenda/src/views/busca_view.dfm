@@ -11,7 +11,9 @@ object frmBusca: TfrmBusca
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
+  KeyPreview = True
   Position = poScreenCenter
+  OnDestroy = FormDestroy
   OnKeyDown = FormKeyDown
   OnShow = FormShow
   TextHeight = 15
@@ -42,8 +44,8 @@ object frmBusca: TfrmBusca
     ExplicitTop = 247
     ExplicitWidth = 584
     object btnSelecionar: TButton
-      Left = 408
-      Top = 24
+      Left = 172
+      Top = 32
       Width = 75
       Height = 25
       Caption = 'Selecionar'
@@ -51,13 +53,25 @@ object frmBusca: TfrmBusca
       OnClick = btnSelecionarClick
     end
     object btnCancelar: TButton
-      Left = 280
-      Top = 24
+      Left = 488
+      Top = 32
       Width = 75
       Height = 25
       Caption = 'Cancelar'
       TabOrder = 1
       OnClick = btnCancelarClick
+    end
+    object edtCodPedido: TLabeledEdit
+      Left = 16
+      Top = 32
+      Width = 150
+      Height = 23
+      EditLabel.Width = 99
+      EditLabel.Height = 15
+      EditLabel.Caption = 'C'#243'digo do Pedido:'
+      NumbersOnly = True
+      TabOrder = 2
+      Text = ''
     end
   end
 end
